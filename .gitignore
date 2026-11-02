@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual env
+venv/
+.env
+*.env
+
+# Streamlit secrets (local only)
+.streamlit/secrets.toml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# PDF source (big binary)
+# Data/políticas_da_loja.pdf  # opcional: comente se quiser versionar o PDF
