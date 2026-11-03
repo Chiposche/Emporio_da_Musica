@@ -163,6 +163,45 @@ The virtual assistant has a defined personality in the system prompt:
 
 ---
 
+## 📊 Product Vision
+
+### User Stories
+
+| As a... | I want to... | So that... |
+|---|---|---|
+| Customer | search products by name, price, or category | I can find what I need without navigating the full catalog |
+| Customer | track my order with just an order number or my name | I get instant updates without calling the store |
+| Customer | ask about return/exchange policies in natural language | I understand my rights without reading legal text |
+| Store manager | see which tools the agent called (Debug Mode) | I can audit response quality and data accuracy |
+
+### Success Metrics (KPIs)
+
+| Metric | Description | How it's measured |
+|---|---|---|
+| **Resolution rate** | % of queries resolved without human escalation | Agent completes with a data-backed answer (no fallback message) |
+| **Tool accuracy** | Correct tool called with correct parameters | Eval script: 15/15 scenarios pass (`make eval`) |
+| **TTFT** | Time to first token — perceived responsiveness | Measured per turn, shown in Debug Mode |
+| **Fallback rate** | % of turns where provider fallback was triggered | Logged in timing metadata (`fallbacks` field) |
+| **Scope adherence** | % of out-of-scope questions handled gracefully | Persona guardrails + few-shot examples enforce redirection |
+
+### Business Impact
+
+- **24/7 availability**: answers customer questions outside business hours (store operates Mon-Sat only)
+- **Cost reduction**: handles routine queries (product search, order status, policy FAQ) that represent ~70% of support volume
+- **Consistency**: every answer is grounded in real data — no human-dependent variation in pricing or policy info
+- **Scalability**: serves unlimited concurrent users with the same response quality
+- **Data insights**: tool call logs reveal what customers ask most (product trends, common complaints, policy confusion points)
+
+### Product Roadmap
+
+| Phase | Scope | Value |
+|---|---|---|
+| **MVP** (current) | ReAct agent, 4 tools, multi-provider, streaming UI | Functional proof-of-concept with real data |
+| **v1** | Conversation persistence, structured logging, analytics dashboard | Operational visibility and user continuity |
+| **v2** | Semantic search (RAG), multi-language, PII masking, WhatsApp integration | Production-grade customer service channel |
+
+---
+
 ## ⚡ UI Features
 
 - **Token-by-token streaming** with TTFT (Time to First Token) measurement
@@ -223,7 +262,6 @@ This project was developed with **Claude Code** (Anthropic's CLI agent) as a pai
 ```
 streamlit>=1.30.0          # Chat interface + deployment
 openai>=1.10.0             # HTTP client (OpenAI-compatible API)
-google-genai>=2.0.0        # Legacy (kept for compatibility)
 pandas>=2.0.0              # CSV data manipulation
 pdfplumber>=0.9.0          # PDF text extraction
 python-dotenv>=1.0.0       # Environment variables (.env)
