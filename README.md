@@ -2,8 +2,11 @@
 
 > Technical Challenge — AI Engineer | Artefact
 
+[![CI](https://github.com/Chiposche/Emp-rio-da-M-sica/actions/workflows/ci.yml/badge.svg)](https://github.com/Chiposche/Emp-rio-da-M-sica/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue)](https://python.org)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.30%2B-FF4B4B)](https://streamlit.io)
+[![Tests](https://img.shields.io/badge/tests-71%20passed-brightgreen)](tests/)
+[![Eval](https://img.shields.io/badge/eval-18%2F18%20scenarios-brightgreen)](scripts/eval_agent.py)
 
 A conversational agent built with a **ReAct + Function Calling** architecture for customer support at a fictional musical instrument store based in Campo Grande/MS, Brazil.
 
@@ -46,9 +49,12 @@ The agent follows the **Thought → Action → Observation → Answer** pattern:
 ├── agent.py                  # ReAct loop with streaming and multi-provider support
 ├── persona.py                # Marina's system prompt
 ├── core/
-│   ├── loader.py             # Data loading (SQLite/CSV)
+│   ├── loader.py             # Data loading (SQLite/CSV, LRU cached)
 │   ├── persistence.py        # Conversation persistence (SQLite)
 │   ├── logger.py             # Structured JSONL logging
+│   ├── pii_mask.py           # PII detection + masking (CPF, email, phone, names)
+│   ├── rate_limiter.py       # Rate limiter: 10 req/min, 100 req/hr, thread-safe
+│   ├── errors.py             # Error categorization + recovery strategy
 │   └── utils.py              # Shared utility functions
 ├── tools/
 │   ├── product_search.py     # Product search (name, price, category, stock)
@@ -61,7 +67,10 @@ The agent follows the **Thought → Action → Observation → Answer** pattern:
 │   ├── test_order_lookup.py
 │   ├── test_promotion_check.py
 │   ├── test_policy_search.py
-│   └── test_guardrails.py    # PIX non-cumulativity, accessory denial, policy coverage
+│   ├── test_guardrails.py    # PIX non-cumulativity, accessory denial, policy coverage
+│   ├── test_pii_mask.py      # PII detection and masking
+│   ├── test_rate_limiter.py  # Rate limiter sliding window
+│   └── test_errors.py        # Error categorization + recovery strategies
 ├── scripts/
 │   ├── build_kb.py           # Extracts PDF → politicas.md + compiles CSVs → SQLite
 │   └── eval_agent.py         # Deterministic eval (15 scenarios, real data)
@@ -197,7 +206,7 @@ The virtual assistant has a defined personality in the system prompt:
 | Metric | Description | How it's measured |
 |---|---|---|
 | **Resolution rate** | % of queries resolved without human escalation | Agent completes with a data-backed answer (no fallback message) |
-| **Tool accuracy** | Correct tool called with correct parameters | Eval script: 15/15 scenarios pass (`make eval`) |
+| **Tool accuracy** | Correct tool called with correct parameters | Eval script: 18/18 scenarios pass (`make eval`) |
 | **TTFT** | Time to first token — perceived responsiveness | Measured per turn, shown in Debug Mode |
 | **Fallback rate** | % of turns where provider fallback was triggered | Logged in timing metadata (`fallbacks` field) |
 | **Scope adherence** | % of out-of-scope questions handled gracefully | Persona guardrails + few-shot examples enforce redirection |
@@ -214,9 +223,9 @@ The virtual assistant has a defined personality in the system prompt:
 
 | Phase | Scope | Value |
 |---|---|---|
-| **MVP** (current) | ReAct agent, 4 tools, multi-provider, streaming UI | Functional proof-of-concept with real data |
-| **v1** | Conversation persistence, structured logging, analytics dashboard | Operational visibility and user continuity |
-| **v2** | Semantic search (RAG), multi-language, PII masking, WhatsApp integration | Production-grade customer service channel |
+| **MVP** (current) | ReAct agent, 4 tools, multi-provider, streaming UI, PII masking, rate limiting, retry/backoff, conversation persistence, structured JSONL logging, analytics dashboard, 31 tests + 18-scenario eval, CI | Full-featured proof-of-concept with real data and production-grade safeguards |
+| **v1** | Semantic search (RAG) for products and policies, OpenTelemetry distributed tracing | Better retrieval at scale, production observability |
+| **v2** | Multi-language support, WhatsApp / Twilio integration, human-in-the-loop escalation | Real customer service channel |
 
 ---
 
@@ -233,12 +242,16 @@ The virtual assistant has a defined personality in the system prompt:
 
 ## ✅ Quality & CI
 
-- **31 pytest tests** covering all 4 tools + guardrails with mock fixtures (`make test`)
+- **71 pytest tests** covering all 4 tools, guardrails, PII, rate limiter and error handling (`make test`)
 - **18-scenario eval script** against real data, including guardrail checks (`make eval`)
 - **Ruff linting** configured with per-file rules (`make lint`)
 - **GitHub Actions CI** — lint + tests on Python 3.10 and 3.12 for every push/PR
 - **Prompt injection guardrails** — Marina refuses system prompt leaks and role hijacking
-- **Makefile** — `make run`, `make test`, `make lint`, `make eval`, `make install`
+- **PII masking** — CPF, email, phone, customer names and order IDs masked before LLM; unmasked in response
+- **Rate limiting** — 10 req/min / 100 req/hr sliding window, thread-safe
+- **Retry with exponential backoff** — 3 attempts at 300/600/1200ms, global 45s timeout
+- **Error categorization** — maps exceptions (timeout, rate-limit, auth, 404) to recovery strategies
+- **Makefile** — `make run`, `make test`, `make lint`, `make eval`, `make coverage`, `make install`
 
 ---
 
@@ -246,16 +259,17 @@ The virtual assistant has a defined personality in the system prompt:
 
 The project uses a **three-layer testing approach**:
 
-1. **Unit tests** (`make test`) — 31 pytest tests with mock fixtures covering all 4 tools + guardrails (PIX non-cumulativity, accessory denial, policy coverage). Tests run without API keys or real data.
+1. **Unit tests** (`make test`) — 71 pytest tests with mock fixtures covering all 4 tools + guardrails + PII masking + rate limiter + error categorization. Tests run without API keys or real data.
 
 2. **Deterministic eval** (`make eval`) — 18 scenarios that run the full tool pipeline against real CSV/SQLite data, including guardrail checks (PIX warning presence, no accessories in catalog, installment policy lookup). No LLM involved — pure data validation.
 
 3. **CI pipeline** (`.github/workflows/ci.yml`) — Ruff lint + pytest on Python 3.10 and 3.12 for every push/PR to `main`, ensuring no regressions.
 
 ```bash
-make test    # Unit tests (pytest)
-make eval    # Deterministic eval (15 scenarios)
-make lint    # Code style (ruff)
+make test      # Unit tests (pytest)
+make coverage  # Tests with coverage report
+make eval      # Deterministic eval (18 scenarios)
+make lint      # Code style (ruff)
 ```
 
 ---
@@ -296,11 +310,10 @@ Access it via the Streamlit sidebar navigation (appears automatically as a secon
 ## 🔮 What I'd Do with More Time
 
 - **Semantic search (RAG)**: embed products and policies with a lightweight model, use cosine similarity for retrieval — overkill now, but necessary at scale
-- **Conversation persistence**: store sessions in a database so users can resume conversations
-- **PII masking**: detect and redact personal data before sending to the LLM
-- **Observability**: structured logging with OpenTelemetry traces per agent turn
 - **Multi-language support**: detect user language and switch Marina's persona accordingly
-- **Admin dashboard**: Streamlit page showing tool usage stats, most-queried products, and error rates
+- **WhatsApp / telephony integration**: connect the agent to a real customer service channel via Twilio or Meta Cloud API
+- **OpenTelemetry tracing**: distributed traces per agent turn with span-level latency for provider calls, tool executions and PII masking
+- **Human-in-the-loop escalation**: route unresolved queries to a human agent with full conversation context
 
 ---
 

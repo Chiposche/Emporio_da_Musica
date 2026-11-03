@@ -1,10 +1,13 @@
-.PHONY: run test lint format build-kb install eval
+.PHONY: run test coverage lint format build-kb install eval
 
 run:
 	streamlit run app.py
 
 test:
 	python -m pytest tests/ -v
+
+coverage:
+	python -m pytest tests/ -v --cov=. --cov-report=term-missing --cov-omit="scripts/*,pages/*,tests/*,app.py"
 
 lint:
 	ruff check .

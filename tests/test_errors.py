@@ -1,13 +1,12 @@
 """
 Testes para categorização de erro e retry automático.
 """
-import time
 import unittest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import call, patch
 
 from core.errors import (
-    ErrorType,
     ErrorRecovery,
+    ErrorType,
     categorize_error,
     get_recovery_strategy,
     is_recoverable,
@@ -112,7 +111,7 @@ class TestRetryBackoff(unittest.TestCase):
         messages = [{"role": "user", "content": "test"}]
         cfg = {"model": "test-model"}
 
-        results = list(_retry_with_backoff(messages, "key", 10, cfg))
+        list(_retry_with_backoff(messages, "key", 10, cfg))
 
         # Deve ter chamado stream_llm 2x
         assert mock_stream_llm.call_count == 2
@@ -139,7 +138,7 @@ class TestRetryBackoff(unittest.TestCase):
     @patch("time.sleep")
     def test_max_retries_exceeded(self, mock_sleep, mock_stream_llm):
         """Deve desistir após MAX_RETRIES."""
-        from agent import _retry_with_backoff, MAX_RETRIES
+        from agent import MAX_RETRIES, _retry_with_backoff
 
         # Simular: sempre timeout
         mock_stream_llm.side_effect = TimeoutError("Timeout")
@@ -157,7 +156,7 @@ class TestRetryBackoff(unittest.TestCase):
     @patch("time.sleep")
     def test_exponential_backoff(self, mock_sleep, mock_stream_llm):
         """Backoff deve ser exponencial (300ms, 600ms, 1200ms)."""
-        from agent import _retry_with_backoff, RETRY_BACKOFF_MS
+        from agent import RETRY_BACKOFF_MS, _retry_with_backoff
 
         mock_stream_llm.side_effect = TimeoutError("Timeout")
 

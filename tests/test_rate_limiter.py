@@ -1,10 +1,9 @@
 """
 Testes para rate limiting.
 """
-import time
 import unittest
 
-from core.rate_limiter import RateLimiter, RateLimitConfig
+from core.rate_limiter import RateLimitConfig, RateLimiter
 
 
 class TestRateLimiter(unittest.TestCase):

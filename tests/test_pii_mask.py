@@ -3,7 +3,7 @@ Testes para detecção e mascaramento de PII.
 """
 import unittest
 
-from core.pii_mask import PIIMasker, PII
+from core.pii_mask import PII, PIIMasker
 
 
 class TestPIIDetection(unittest.TestCase):

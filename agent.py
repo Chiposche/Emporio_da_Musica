@@ -16,7 +16,7 @@ import time
 from functools import lru_cache
 from typing import Any, Generator, Optional
 
-from core.errors import categorize_error, get_recovery_strategy, ErrorRecovery
+from core.errors import ErrorRecovery, categorize_error, get_recovery_strategy
 from core.pii_mask import get_masker
 from persona import SYSTEM_PROMPT
 from tools.order_lookup import get_order_status
