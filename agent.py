@@ -16,10 +16,10 @@ from functools import lru_cache
 from typing import Any, Generator, Optional
 
 from persona import SYSTEM_PROMPT
-from tools.product_search import search_products
 from tools.order_lookup import get_order_status
-from tools.promotion_check import check_promotions
 from tools.policy_search import search_policies
+from tools.product_search import search_products
+from tools.promotion_check import check_promotions
 
 log = logging.getLogger("emporio.agent")
 

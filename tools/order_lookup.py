@@ -2,6 +2,7 @@
 Ferramenta de consulta de status de pedidos e rastreamento.
 """
 from typing import Optional
+
 from core.loader import get_data
 from core.utils import pd_not_na
 

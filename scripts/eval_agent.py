@@ -12,10 +12,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from tools.product_search import search_products
 from tools.order_lookup import get_order_status
-from tools.promotion_check import check_promotions
 from tools.policy_search import search_policies
+from tools.product_search import search_products
+from tools.promotion_check import check_promotions
 
 SCENARIOS = [
     {

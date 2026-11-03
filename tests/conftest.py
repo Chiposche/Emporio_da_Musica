@@ -1,6 +1,5 @@
-import pytest
 import pandas as pd
-
+import pytest
 
 PRODUCTS = pd.DataFrame([
     {"product_id": 1, "name": "Violão Yamaha C40", "description": "Violão clássico nylon iniciante",

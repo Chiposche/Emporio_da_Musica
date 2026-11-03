@@ -2,13 +2,16 @@
 Interface Streamlit — Atendente Virtual Marina | Empório da Música
 Desafio Técnico AI Engineer — Artefact
 """
-import os
 import logging
+import os
+
 from dotenv import load_dotenv
+
 load_dotenv()
 
-import streamlit as st
 from datetime import datetime
+
+import streamlit as st
 
 # Log de latência da Marina no console do Streamlit:
 #   streamlit run app.py  ->  mostra "gemini: ok modelo=... ttft=... total=..."
@@ -26,7 +29,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-from agent import run_agent_turn_stream, PROVIDERS, DEFAULT_PROVIDER
+from agent import PROVIDERS, run_agent_turn_stream
 
 # Quantas mensagens do histórico vão para a IA. Manter o recorte evita que a
 # latência cresça a cada turno (contexto inteiro era reenviado sempre) e que a

@@ -3,13 +3,11 @@ Ferramenta de busca de produtos no catálogo da Empório da Música.
 
 Inclui normalização de acento, plural/singular e correção de typos via difflib (stdlib).
 """
-import difflib
 import re
 from typing import Optional
 
 from core.loader import get_data
 from core.utils import norm as _norm
-
 
 # Sinônimos curados (mapeia termo do usuário -> termos do catálogo)
 SYNONYMS = {
