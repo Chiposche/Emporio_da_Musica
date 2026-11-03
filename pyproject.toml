@@ -1,0 +1,29 @@
+[project]
+name = "emporio-da-musica"
+version = "0.1.0"
+description = "Virtual customer service agent for a musical instrument store — ReAct + Function Calling"
+requires-python = ">=3.10"
+dependencies = [
+    "streamlit>=1.30.0",
+    "openai>=1.10.0",
+    "pandas>=2.0.0",
+    "pdfplumber>=0.9.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
