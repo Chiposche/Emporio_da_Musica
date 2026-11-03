@@ -2,7 +2,7 @@
 
 > Technical Challenge — AI Engineer | Artefact
 
-[![Demo ao vivo](https://img.shields.io/badge/demo-ao%20vivo-brightgreen)](https://emporiodamusica.streamlit.app/)
+<a href="https://emporiodamusica.streamlit.app/" target="_blank"><img src="https://img.shields.io/badge/demo-ao%20vivo-brightgreen" alt="Demo ao vivo" /></a>
 
 [![CI](https://github.com/Chiposche/Emp-rio-da-M-sica/actions/workflows/ci.yml/badge.svg)](https://github.com/Chiposche/Emp-rio-da-M-sica/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue)](https://python.org)
