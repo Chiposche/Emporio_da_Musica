@@ -92,9 +92,10 @@ Selectable via sidebar — evaluators can compare behavior between providers:
 | Model | Provider | SDK | Cost |
 |---|---|---|---|
 | MiMo V2.6 Flash | OpenRouter | `openai` (compatible) | Pay-per-use |
-| Qwen 3.8 27B | Groq | `openai` (compatible) | Free |
+| Qwen 3.8 27B | Groq | `openai` (compatible) | Free (rate-limited) |
+| OpenRouter Free | OpenRouter | `openai` (compatible) | Free (auto-selects free models) |
 
-The agent logic is **identical** for both — only the base URL, model name, and API key change. Adding a new provider is as simple as adding an entry to the `PROVIDERS` dict in `agent.py`.
+The agent logic is **identical** for all providers — only the base URL, model name, and API key change. Adding a new provider is as simple as adding an entry to the `PROVIDERS` dict in `agent.py`. The OpenRouter Free option reuses the same API key as MiMo Flash.
 
 ---
 

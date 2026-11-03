@@ -45,6 +45,13 @@ PROVIDERS = {
         "key_help": "https://console.groq.com",
         "placeholder": "gsk_...",
     },
+    "OpenRouter Free (Gratuito)": {
+        "base_url": "https://openrouter.ai/api/v1",
+        "model": "openrouter/free",
+        "env_key": "OPENROUTER_API_KEY",
+        "key_help": "https://openrouter.ai/keys",
+        "placeholder": "sk-or-...",
+    },
 }
 
 DEFAULT_PROVIDER = "MiMo V2.6 Flash (OpenRouter)"
