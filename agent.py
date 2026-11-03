@@ -17,6 +17,7 @@ from functools import lru_cache
 from typing import Any, Generator, Optional
 
 from core.errors import categorize_error, get_recovery_strategy, ErrorRecovery
+from core.pii_mask import get_masker
 from persona import SYSTEM_PROMPT
 from tools.order_lookup import get_order_status
 from tools.policy_search import search_policies
@@ -349,9 +350,30 @@ def _stream_llm(
         return
 
     client = _get_client(key, cfg["base_url"])
+    masker = get_masker()
+
+    # Preparar mensagens com PII masking
     api_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    detected_pii_types: dict[str, int] = {}
+    pii_per_message: list[tuple[str, list]] = []  # (role, piis) para desmascaramento
+
     for m in messages:
-        api_messages.append({"role": m["role"], "content": m["content"]})
+        role = m["role"]
+        content = m["content"]
+
+        # Mascarar PII em mensagens do usuário
+        if role == "user":
+            masked_content, piis, pii_counts = masker.mask_text(content)
+            api_messages.append({"role": role, "content": masked_content})
+            pii_per_message.append((role, piis))
+            # Agregar contagem de PIIs
+            for pii_type, count in pii_counts.items():
+                detected_pii_types[pii_type] = detected_pii_types.get(pii_type, 0) + count
+            if pii_counts:
+                log.info("User message had PII: %s", pii_counts)
+        else:
+            api_messages.append({"role": role, "content": content})
+            pii_per_message.append((role, []))
 
     thoughts: list[dict] = []
     parts: list[str] = []
@@ -398,15 +420,27 @@ def _stream_llm(
 
             if not tool_acc:
                 response = "".join(parts).strip()
+
+                # Desmascarar a resposta com os PIIs detectados das mensagens de usuário
+                all_user_piis = []
+                for role, piis in pii_per_message:
+                    if role == "user":
+                        all_user_piis.extend(piis)
+                if all_user_piis:
+                    response = masker.unmask_text(response, all_user_piis)
+
                 timing = _timing(model, step, ttft_ms, t_start, [])
                 timing.update(usage_tokens)
+                if detected_pii_types:
+                    timing["pii_detected"] = detected_pii_types
                 thoughts.append(_thought(0, "_timing", {"modelo": model}, timing))
                 log.info(
-                    "%s: ok rodadas=%s ttft=%s total=%.0fms",
+                    "%s: ok rodadas=%s ttft=%s total=%.0fms pii=%s",
                     model,
                     step,
                     f"{ttft_ms:.0f}ms" if ttft_ms else "n/a",
                     (time.perf_counter() - t_start) * 1000,
+                    detected_pii_types or "none",
                 )
                 yield _event_done(response, thoughts, timing)
                 return
