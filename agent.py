@@ -185,7 +185,20 @@ def run_agent_turn_stream(
     try:
         yield from _stream_llm(messages, api_key, max_steps, provider_cfg)
     except Exception as e:
-        log.exception("falha inesperada no turno do agente")
+        log.warning("provider %s falhou: %s — tentando fallback", provider, e)
+        fallback_cfg = next(
+            (cfg for name, cfg in PROVIDERS.items() if cfg != provider_cfg),
+            None,
+        )
+        if fallback_cfg:
+            fb_key = os.getenv(fallback_cfg["env_key"], "")
+            if fb_key:
+                try:
+                    yield {"type": "text", "text": f"_(alternando para {fallback_cfg['model']}…)_\n\n"}
+                    yield from _stream_llm(messages, fb_key, max_steps, fallback_cfg)
+                    return
+                except Exception as e2:
+                    log.exception("fallback também falhou: %s", e2)
         yield _event_done(
             f"Ops! Tivemos uma instabilidade ao conectar com a IA ({type(e).__name__}): {e}\n\n"
             "Por favor, confira se sua chave de API está preenchida corretamente na barra lateral.",
