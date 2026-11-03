@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """
-Gera Data/politicas.md a partir de Data/políticas_da_loja.pdf.
+Gera Data/politicas.md (do PDF) e Data/emporio.db (dos CSVs).
 Uso: python scripts/build_kb.py
 """
+import json
 import re
+import sqlite3
 import sys
+import unicodedata
 from pathlib import Path
 
 try:
@@ -93,6 +96,79 @@ def validate(sections: dict[str, str]) -> bool:
     return True
 
 
+DB_PATH = ROOT / "Data" / "emporio.db"
+
+
+def _norm(s: str) -> str:
+    s = unicodedata.normalize("NFKD", str(s))
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    return re.sub(r"\s+", " ", s).strip().lower()
+
+
+def _specs_text(specs_raw) -> str:
+    try:
+        return " ".join(str(v) for v in json.loads(specs_raw or "{}").values())
+    except Exception:
+        return ""
+
+
+def build_sqlite(data_dir: Path, db_path: Path) -> int:
+    """Compila os CSVs em Data/ para um banco SQLite com search_text pré-calculado."""
+    try:
+        import pandas as pd
+    except ImportError:
+        print("ERRO: pandas não instalado. pip install pandas", file=sys.stderr)
+        return 1
+
+    csvs = {
+        "products": "desafio_tecnico_ai_eng - products.csv",
+        "categories": "desafio_tecnico_ai_eng - categories.csv",
+        "customers": "desafio_tecnico_ai_eng - customers.csv",
+        "orders": "desafio_tecnico_ai_eng - orders.csv",
+        "order_items": "desafio_tecnico_ai_eng - order_items.csv",
+        "promotions": "desafio_tecnico_ai_eng - promotions.csv",
+    }
+
+    for name, fname in csvs.items():
+        if not (data_dir / fname).exists():
+            print(f"ERRO: CSV não encontrado: {fname}", file=sys.stderr)
+            return 1
+
+    tables = {name: pd.read_csv(data_dir / fname) for name, fname in csvs.items()}
+
+    # Enriquece produtos
+    products = tables["products"].merge(
+        tables["categories"][["category_id", "name"]].rename(columns={"name": "category_name"}),
+        on="category_id",
+        how="left",
+    )
+    products["search_text"] = (
+        products["name"].fillna("").apply(_norm)
+        + " "
+        + products["description"].fillna("").apply(_norm)
+        + " "
+        + products["specs"].apply(lambda x: _norm(_specs_text(x)))
+    )
+    tables["products"] = products
+
+    conn = sqlite3.connect(db_path)
+    try:
+        for name, df in tables.items():
+            df.to_sql(name, conn, if_exists="replace", index=False)
+
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_products_search ON products(search_text)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_orders_id ON orders(order_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_customers_name ON customers(name)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id)")
+        conn.commit()
+    finally:
+        conn.close()
+
+    size = db_path.stat().st_size
+    print(f"Gerado {db_path.relative_to(ROOT)} ({size:,} bytes, {len(tables)} tabelas)")
+    return 0
+
+
 def main() -> int:
     if not PDF_PATH.exists():
         print(f"ERRO: PDF não encontrado em {PDF_PATH}", file=sys.stderr)
@@ -107,6 +183,12 @@ def main() -> int:
 
     write_markdown(sections, OUT_PATH)
     print(f"Gerado {OUT_PATH.relative_to(ROOT)} ({OUT_PATH.stat().st_size} bytes)")
+
+    print("Compilando CSVs em SQLite...")
+    rc = build_sqlite(ROOT / "Data", DB_PATH)
+    if rc != 0:
+        return rc
+
     return 0
 
 
