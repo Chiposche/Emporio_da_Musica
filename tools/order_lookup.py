@@ -3,6 +3,7 @@ Ferramenta de consulta de status de pedidos e rastreamento.
 """
 from typing import Optional
 from core.loader import get_data
+from core.utils import pd_not_na
 
 
 def get_order_status(
@@ -90,6 +91,3 @@ def get_order_status(
     }
 
 
-def pd_not_na(val) -> bool:
-    import pandas as pd
-    return bool(pd.notna(val) and str(val).strip().lower() != "nan")

@@ -5,19 +5,13 @@ Busca por seção (## N.N Título) — muito mais preciso e barato que o PDF int
 Inclui normalização de acento/plural para capturar variações naturais.
 """
 import re
-import unicodedata
 from pathlib import Path
 from typing import Optional
 
+from core.utils import norm as _norm
+
 ROOT = Path(__file__).parent.parent
 MD_PATH = ROOT / "Data" / "politicas.md"
-
-
-def _norm(s: str) -> str:
-    """Remove acentos, minúsculas, colapsa espaços."""
-    s = unicodedata.normalize("NFKD", s)
-    s = "".join(c for c in s if not unicodedata.combining(c))
-    return re.sub(r"\s+", " ", s).strip().lower()
 
 
 # Cache do markdown parseado

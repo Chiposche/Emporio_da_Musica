@@ -3,6 +3,7 @@ Ferramenta de verificação de promoções ativas da loja.
 """
 from typing import Optional
 from core.loader import get_data
+from core.utils import pd_not_na
 
 
 def check_promotions(
@@ -63,6 +64,3 @@ def check_promotions(
     return results
 
 
-def pd_not_na(val) -> bool:
-    import pandas as pd
-    return bool(pd.notna(val) and str(val).strip().lower() != "nan")

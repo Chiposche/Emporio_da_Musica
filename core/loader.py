@@ -5,12 +5,12 @@ Usa cache em memória para não reler a cada chamada.
 Políticas são lidas sob demanda do .md (tools/policy_search.py).
 """
 import json
-import re
 import sqlite3
-import unicodedata
 from pathlib import Path
 
 import pandas as pd
+
+from core.utils import norm as _norm
 
 ROOT = Path(__file__).parent.parent
 DATA_DIR = ROOT / "Data"
@@ -29,12 +29,6 @@ def _load_from_sqlite() -> dict:
         return tables
     finally:
         conn.close()
-
-
-def _norm(s: str) -> str:
-    s = unicodedata.normalize("NFKD", str(s))
-    s = "".join(c for c in s if not unicodedata.combining(c))
-    return re.sub(r"\s+", " ", s).strip().lower()
 
 
 def _specs_text(specs_raw) -> str:

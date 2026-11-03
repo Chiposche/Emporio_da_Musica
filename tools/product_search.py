@@ -5,10 +5,10 @@ Inclui normalização de acento, plural/singular e correção de typos via diffl
 """
 import difflib
 import re
-import unicodedata
 from typing import Optional
 
 from core.loader import get_data
+from core.utils import norm as _norm
 
 
 # Sinônimos curados (mapeia termo do usuário -> termos do catálogo)
@@ -39,15 +39,6 @@ SYNONYMS = {
     "ukulele": "ukulele",
     "ukelele": "ukulele",
 }
-
-
-def _norm(s: str) -> str:
-    """Remove acentos, minúsculas, colapsa espaços."""
-    if not s:
-        return ""
-    s = unicodedata.normalize("NFKD", str(s))
-    s = "".join(c for c in s if not unicodedata.combining(c))
-    return re.sub(r"\s+", " ", s).strip().lower()
 
 
 def _singular(pt_br: str) -> str:
