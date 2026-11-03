@@ -57,7 +57,7 @@ PROVIDERS = {
     },
 }
 
-DEFAULT_PROVIDER = "MiMo V2.6 Flash (OpenRouter)"
+DEFAULT_PROVIDER = "OpenRouter Free (Gratuito)"
 REQUEST_TIMEOUT_MS = 30_000
 
 # Configuração de retry automático

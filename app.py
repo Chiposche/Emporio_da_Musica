@@ -29,7 +29,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-from agent import PROVIDERS, run_agent_turn_stream
+from agent import DEFAULT_PROVIDER, PROVIDERS, run_agent_turn_stream
 from core.logger import log_turn
 from core.persistence import list_sessions, load_session, new_session_id, save_message
 from core.rate_limiter import check_rate_limit, get_rate_limit_metrics
@@ -115,10 +115,11 @@ with st.sidebar:
     st.title("⚙️ Painel do Avaliador")
     st.caption("Controle técnico para teste do agente")
 
+    _provider_keys = list(PROVIDERS.keys())
     selected_provider = st.selectbox(
         "Provedor / Modelo",
-        list(PROVIDERS.keys()),
-        index=0,
+        _provider_keys,
+        index=_provider_keys.index(DEFAULT_PROVIDER),
     )
     pcfg = PROVIDERS[selected_provider]
     st.markdown(f"**Modelo:** ⚡ {selected_provider}")

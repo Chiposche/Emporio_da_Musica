@@ -74,7 +74,7 @@ with left:
             tool_counts.most_common(),
             columns=["Ferramenta", "Chamadas"],
         )
-        chart = alt.Chart(tool_df).mark_barh().encode(
+        chart = alt.Chart(tool_df).mark_bar(orient="horizontal").encode(
             x="Chamadas:Q",
             y=alt.Y("Ferramenta:N", sort="-x"),
         ).properties(height=300)
@@ -87,7 +87,7 @@ with right:
     if "provider" in df.columns:
         provider_df = df["provider"].value_counts().reset_index()
         provider_df.columns = ["Provider", "Contagem"]
-        chart = alt.Chart(provider_df).mark_barh().encode(
+        chart = alt.Chart(provider_df).mark_bar(orient="horizontal").encode(
             x="Contagem:Q",
             y=alt.Y("Provider:N", sort="-x"),
         ).properties(height=300)
