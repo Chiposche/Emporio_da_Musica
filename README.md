@@ -47,6 +47,8 @@ The agent follows the **Thought → Action → Observation → Answer** pattern:
 ├── persona.py                # Marina's system prompt
 ├── core/
 │   ├── loader.py             # Data loading (SQLite/CSV)
+│   ├── persistence.py        # Conversation persistence (SQLite)
+│   ├── logger.py             # Structured JSONL logging
 │   └── utils.py              # Shared utility functions
 ├── tools/
 │   ├── product_search.py     # Product search (name, price, category, stock)
@@ -58,11 +60,15 @@ The agent follows the **Thought → Action → Observation → Answer** pattern:
 │   ├── test_product_search.py
 │   ├── test_order_lookup.py
 │   ├── test_promotion_check.py
-│   └── test_policy_search.py
+│   ├── test_policy_search.py
+│   └── test_guardrails.py    # PIX non-cumulativity, accessory denial, policy coverage
 ├── scripts/
 │   ├── build_kb.py           # Extracts PDF → politicas.md + compiles CSVs → SQLite
 │   └── eval_agent.py         # Deterministic eval (15 scenarios, real data)
-├── Data/                     # CSVs, SQLite, policy PDF
+├── pages/
+│   └── analytics.py          # Usage analytics dashboard (reads JSONL logs)
+├── Data/                     # CSVs, SQLite, policy PDF, conversations DB
+├── logs/                     # Structured agent logs (JSONL, gitignored)
 ├── .github/workflows/ci.yml  # GitHub Actions (lint + test)
 ├── .streamlit/
 │   ├── config.toml           # Visual theme
@@ -147,6 +153,17 @@ streamlit run app.py
 - Keyword-based search on the `.md` file is sufficient and deterministic
 - SQLite with indexes covers all necessary queries
 
+### Why Streamlit?
+- One-command launch (`streamlit run app.py`) — evaluators can test immediately
+- Built-in chat UI, session state, and streaming support
+- No frontend build step, no JavaScript, no separate server
+- Debug mode with expandable panels is native via `st.expander`
+
+### Why `session_state` for conversation history?
+- For an MVP/prototype, in-memory per-session history is sufficient — users interact in a single sitting
+- Adding database persistence would increase complexity without improving the core agent evaluation
+- For production, the natural next step is SQLite or Redis (documented in the roadmap)
+
 ### Why multi-provider?
 - Demonstrates the architecture is model-agnostic
 - Allows behavior comparison between providers
@@ -216,8 +233,8 @@ The virtual assistant has a defined personality in the system prompt:
 
 ## ✅ Quality & CI
 
-- **25 pytest tests** covering all 4 tools with mock fixtures (`make test`)
-- **15-scenario eval script** against real data (`make eval`)
+- **31 pytest tests** covering all 4 tools + guardrails with mock fixtures (`make test`)
+- **18-scenario eval script** against real data, including guardrail checks (`make eval`)
 - **Ruff linting** configured with per-file rules (`make lint`)
 - **GitHub Actions CI** — lint + tests on Python 3.10 and 3.12 for every push/PR
 - **Prompt injection guardrails** — Marina refuses system prompt leaks and role hijacking
@@ -225,10 +242,53 @@ The virtual assistant has a defined personality in the system prompt:
 
 ---
 
+## 🧪 Testing Strategy
+
+The project uses a **three-layer testing approach**:
+
+1. **Unit tests** (`make test`) — 31 pytest tests with mock fixtures covering all 4 tools + guardrails (PIX non-cumulativity, accessory denial, policy coverage). Tests run without API keys or real data.
+
+2. **Deterministic eval** (`make eval`) — 18 scenarios that run the full tool pipeline against real CSV/SQLite data, including guardrail checks (PIX warning presence, no accessories in catalog, installment policy lookup). No LLM involved — pure data validation.
+
+3. **CI pipeline** (`.github/workflows/ci.yml`) — Ruff lint + pytest on Python 3.10 and 3.12 for every push/PR to `main`, ensuring no regressions.
+
+```bash
+make test    # Unit tests (pytest)
+make eval    # Deterministic eval (15 scenarios)
+make lint    # Code style (ruff)
+```
+
+---
+
+## 💾 Conversation Persistence
+
+Conversations are automatically saved to a local SQLite database (`Data/conversations.db`). The sidebar shows the 5 most recent sessions, and clicking one restores the full conversation history. Each browser session gets a unique ID; clicking "Reset" starts a fresh session.
+
+## 📊 Structured Logging (Observability)
+
+Every agent turn is logged to `logs/agent.jsonl` with:
+- Timestamp, session ID, user message (truncated)
+- Tools called (name + arguments)
+- Provider, model, TTFT, total latency, tool rounds
+- Token usage (prompt + completion), fallback events
+- Response length
+
+This enables post-hoc analysis of agent behavior, common queries, and performance trends.
+
+A built-in **Analytics Dashboard** (`pages/analytics.py`) reads the logs and shows:
+- Total turns, average latency, average TTFT, unique sessions
+- Most-called tools (bar chart)
+- Provider usage distribution
+- Latency over time (line chart)
+- Recent log entries table
+
+Access it via the Streamlit sidebar navigation (appears automatically as a second page).
+
+---
+
 ## ⚠️ Known Limitations
 
 - Static data (pre-loaded CSVs, no real-time system integration)
-- No conversation persistence across sessions (`st.session_state` only)
 - Policy search is keyword-based (no semantic embeddings)
 
 ---

@@ -145,6 +145,33 @@ SCENARIOS = [
             ("found is False", lambda r: r["found"] is False),
         ],
     },
+    {
+        "id": "guardrail_pix_warning",
+        "tool": check_promotions,
+        "args": {},
+        "checks": [
+            ("promo items have aviso_pix field", lambda r: all("aviso_pix" in p for p in r) if r else True),
+        ],
+    },
+    {
+        "id": "guardrail_no_accessory",
+        "tool": search_products,
+        "args": {"query": "cordas palheta cabo pedal"},
+        "checks": [
+            ("no accessories in catalog", lambda r: not any(
+                any(w in item["name"].lower() for w in ["corda", "palheta", "cabo", "pedal"])
+                for item in r
+            )),
+        ],
+    },
+    {
+        "id": "policy_parcelamento",
+        "tool": search_policies,
+        "args": {"topic": "parcelamento pagamento"},
+        "checks": [
+            ("found is True", lambda r: r["found"] is True),
+        ],
+    },
 ]
 
 

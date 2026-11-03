@@ -62,6 +62,9 @@ def check_promotions(
             "description": str(row["description"]),
         })
 
+    for item in results:
+        item["aviso_pix"] = "Desconto PIX (5%) NÃO se aplica sobre preços já promocionais. Promoções não são cumulativas (política 6.2)."
+
     return results
 
 

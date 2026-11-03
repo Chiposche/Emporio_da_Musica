@@ -30,6 +30,8 @@ st.set_page_config(
 )
 
 from agent import PROVIDERS, run_agent_turn_stream
+from core.logger import log_turn
+from core.persistence import list_sessions, load_session, new_session_id, save_message
 
 # Quantas mensagens do histórico vão para a IA. Manter o recorte evita que a
 # latência cresça a cada turno (contexto inteiro era reenviado sempre) e que a
@@ -130,8 +132,28 @@ with st.sidebar:
     st.markdown("---")
     if st.button("🔄 Reiniciar Atendimento / Nova Conversa", use_container_width=True):
         st.session_state.messages = []
+        st.session_state.session_id = new_session_id()
         st.rerun()
 
+    st.markdown("---")
+    st.markdown("### 💾 Histórico de Conversas")
+
+    @st.cache_data(ttl=30)
+    def _cached_sessions():
+        return list_sessions(limit=5)
+
+    saved_sessions = _cached_sessions()
+    if saved_sessions:
+        for s in saved_sessions:
+            label = f"📝 {s['started'][:16]} ({s['messages']} msgs)"
+            if st.button(label, key=f"load_{s['session_id']}", use_container_width=True):
+                st.session_state.session_id = s["session_id"]
+                st.session_state.messages = load_session(s["session_id"])
+                st.rerun()
+    else:
+        st.caption("Nenhuma conversa salva ainda.")
+
+    st.markdown("---")
     st.markdown("### 📌 Ferramentas Ativas")
     st.markdown("""
     - `search_products`: Catálogo de 65 produtos
@@ -163,28 +185,13 @@ WELCOME_MESSAGE = (
     "- Para testar rapidamente, basta clicar em um dos botões de exemplo logo abaixo!"
 )
 
+if "session_id" not in st.session_state:
+    st.session_state.session_id = new_session_id()
+
 if "messages" not in st.session_state or len(st.session_state.messages) == 0:
     st.session_state.messages = [
         {"role": "assistant", "content": WELCOME_MESSAGE, "thoughts": []}
     ]
-
-# ----------------- SUGESTÕES RÁPIDAS -----------------
-st.markdown("##### ⚡ Comece rápido com um clique:")
-col1, col2, col3, col4 = st.columns(4)
-
-prompt_to_send = None
-
-if col1.button("🎸 Violões até R$ 1.000", use_container_width=True):
-    prompt_to_send = "Olá! Quais violões vocês têm disponíveis por até R$ 1.000?"
-
-if col2.button("📦 Rastrear Pedido #1", use_container_width=True):
-    prompt_to_send = "Gostaria de saber o status e rastreamento do pedido 1."
-
-if col3.button("🏷️ Promoções Ativas", use_container_width=True):
-    prompt_to_send = "Quais produtos estão em promoção ativa hoje?"
-
-if col4.button("🔄 Política de Devolução", use_container_width=True):
-    prompt_to_send = "Como funciona a política de devolução e prazo de arrependimento da loja?"
 
 # ----------------- HISTÓRICO DE CHAT -----------------
 for msg in st.session_state.messages:
@@ -199,11 +206,25 @@ for msg in st.session_state.messages:
 
 # ----------------- ENTRADA DO USUÁRIO -----------------
 user_input = st.chat_input("Digite sua dúvida sobre instrumentos, pedidos ou políticas...")
+
+# ----------------- SUGESTÕES RÁPIDAS (fixas no rodapé) -----------------
+prompt_to_send = None
+bcol1, bcol2, bcol3, bcol4 = st.bottom.columns(4)
+if bcol1.button("🎸 Violões até R$1.000", use_container_width=True):
+    prompt_to_send = "Olá! Quais violões vocês têm disponíveis por até R$ 1.000?"
+if bcol2.button("📦 Rastrear Pedido #1", use_container_width=True):
+    prompt_to_send = "Gostaria de saber o status e rastreamento do pedido 1."
+if bcol3.button("🏷️ Promoções Ativas", use_container_width=True):
+    prompt_to_send = "Quais produtos estão em promoção ativa hoje?"
+if bcol4.button("🔄 Política de Devolução", use_container_width=True):
+    prompt_to_send = "Como funciona a política de devolução e prazo de arrependimento da loja?"
+
 final_prompt = prompt_to_send or user_input
 
 if final_prompt:
     # Exibe a mensagem do usuário imediatamente
     st.session_state.messages.append({"role": "user", "content": final_prompt})
+    save_message(st.session_state.session_id, "user", final_prompt)
     with st.chat_message("user"):
         st.markdown(final_prompt)
 
@@ -275,11 +296,15 @@ if final_prompt:
 
         if debug_mode and turn["timing"]:
             tm = turn["timing"]
+            token_info = ""
+            if tm.get("total_tokens"):
+                token_info = f" · tokens: {tm.get('prompt_tokens', 0)}↑ + {tm.get('completion_tokens', 0)}↓ = {tm['total_tokens']}"
             st.caption(
                 f"⏱️ 1º token: {tm.get('ttft_ms') or '—'} ms · "
                 f"turno total: {tm.get('total_ms') or '—'} ms · "
                 f"modelo: {tm.get('modelo') or '—'} · "
                 f"rodadas de ferramenta: {tm.get('rodadas_de_ferramenta')}"
+                f"{token_info}"
             )
 
     assistant_response = turn["response"]
@@ -288,6 +313,8 @@ if final_prompt:
         "content": assistant_response,
         "thoughts": thoughts,
     })
+    save_message(st.session_state.session_id, "assistant", assistant_response, thoughts)
+    log_turn(st.session_state.session_id, final_prompt, thoughts, turn["timing"], assistant_response)
 
 # ----------------- RODAPÉ OBRIGATÓRIO -----------------
 current_year = datetime.now().year

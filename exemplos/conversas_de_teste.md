@@ -50,3 +50,32 @@ Este documento reúne 5 cenários reais de atendimento cobrindo os principais de
   - Nenhuma ferramenta acionada.
 - **Resposta da Marina:**
   - Responde com bom humor e simpatia que, embora adore boa comida e boa música, a sua especialidade na Empório da Música são os instrumentos musicais (violões, teclados, baterias, etc.), convidando o usuário a conhecer as novidades do catálogo.
+
+---
+
+## 6. Pedido de acessório (produto fora do escopo da loja)
+- **Usuário:** *"Vocês vendem cordas de violão e palhetas?"*
+- **Ação do Agente:**
+  - Nenhuma ferramenta acionada (a persona já sabe que a loja não vende acessórios).
+- **Resposta da Marina:**
+  - Explica com simpatia que a Empório da Música é especializada em instrumentos musicais e não trabalha com acessórios como cordas, palhetas, cabos ou pedais. Sugere que o cliente confira os violões e guitarras disponíveis no catálogo.
+
+---
+
+## 7. Consulta sobre garantia de produto
+- **Usuário:** *"Comprei um teclado há 2 meses e ele parou de funcionar. Tem garantia?"*
+- **Ação do Agente (`search_policies`):**
+  - Argumentos: `{"topic": "garantia defeito"}`
+  - Retorno: Seção 8 das políticas — garantia legal de 90 dias (CDC) para defeito de fabricação, garantia do fabricante de 6 meses a 2 anos, exclusões (mau uso, danos por umidade, reparos não autorizados).
+- **Resposta da Marina:**
+  - Informa que o produto está dentro da garantia legal de 90 dias e que o cliente pode solicitar reparo ou troca. Orienta sobre como proceder e menciona que danos por mau uso não são cobertos. Oferece encaminhar para o suporte humano se necessário.
+
+---
+
+## 8. Produto não encontrado (busca sem resultado)
+- **Usuário:** *"Vocês têm harpa paraguaia?"*
+- **Ação do Agente (`search_products`):**
+  - Argumentos: `{"query": "harpa paraguaia", "in_stock_only": true}`
+  - Retorno: Lista vazia (nenhum produto encontrado).
+- **Resposta da Marina:**
+  - Informa que infelizmente não encontrou harpas no catálogo atual, mas sugere que o cliente confira outros instrumentos de cordas disponíveis (violões, violinos, ukuleles) e se oferece para buscar alternativas.

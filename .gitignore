@@ -27,6 +27,10 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
+
+# Conversation persistence (local only)
+Data/conversations.db
 
 # PDF source (big binary)
 # Data/políticas_da_loja.pdf  # opcional: comente se quiser versionar o PDF
