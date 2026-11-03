@@ -53,12 +53,22 @@ The agent follows the **Thought → Action → Observation → Answer** pattern:
 │   ├── order_lookup.py       # Order status and tracking
 │   ├── promotion_check.py    # Active promotions with discounts
 │   └── policy_search.py      # Store policies (section-based search on .md)
+├── tests/
+│   ├── conftest.py           # Shared fixtures (mock DataFrames)
+│   ├── test_product_search.py
+│   ├── test_order_lookup.py
+│   ├── test_promotion_check.py
+│   └── test_policy_search.py
 ├── scripts/
-│   └── build_kb.py           # Extracts PDF → politicas.md + compiles CSVs → SQLite
+│   ├── build_kb.py           # Extracts PDF → politicas.md + compiles CSVs → SQLite
+│   └── eval_agent.py         # Deterministic eval (15 scenarios, real data)
 ├── Data/                     # CSVs, SQLite, policy PDF
+├── .github/workflows/ci.yml  # GitHub Actions (lint + test)
 ├── .streamlit/
 │   ├── config.toml           # Visual theme
 │   └── secrets.toml          # API keys (not versioned)
+├── pyproject.toml            # Dependencies, pytest & ruff config
+├── Makefile                  # DX shortcuts (run, test, lint, eval)
 └── requirements.txt
 ```
 
@@ -164,22 +174,30 @@ The virtual assistant has a defined personality in the system prompt:
 
 ---
 
+## ✅ Quality & CI
+
+- **25 pytest tests** covering all 4 tools with mock fixtures (`make test`)
+- **15-scenario eval script** against real data (`make eval`)
+- **Ruff linting** configured with per-file rules (`make lint`)
+- **GitHub Actions CI** — lint + tests on Python 3.10 and 3.12 for every push/PR
+- **Prompt injection guardrails** — Marina refuses system prompt leaks and role hijacking
+- **Makefile** — `make run`, `make test`, `make lint`, `make eval`, `make install`
+
+---
+
 ## ⚠️ Known Limitations
 
 - Static data (pre-loaded CSVs, no real-time system integration)
 - No conversation persistence across sessions (`st.session_state` only)
 - Policy search is keyword-based (no semantic embeddings)
-- No security guardrails (prompt injection, PII detection)
-- No automated tests
 
 ---
 
 ## 🔮 What I'd Do with More Time
 
 - **Semantic search (RAG)**: embed products and policies with a lightweight model, use cosine similarity for retrieval — overkill now, but necessary at scale
-- **Automated test suite**: pytest fixtures with mock API responses; integration tests against a test SQLite DB
 - **Conversation persistence**: store sessions in a database so users can resume conversations
-- **Security layer**: prompt injection detection, PII masking before sending to the LLM
+- **PII masking**: detect and redact personal data before sending to the LLM
 - **Observability**: structured logging with OpenTelemetry traces per agent turn
 - **Multi-language support**: detect user language and switch Marina's persona accordingly
 - **Admin dashboard**: Streamlit page showing tool usage stats, most-queried products, and error rates
