@@ -21,6 +21,9 @@ venv/
 *.swp
 *.swo
 
+# Claude Code (planos locais, memória, configs)
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db
