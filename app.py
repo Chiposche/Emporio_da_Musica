@@ -106,6 +106,13 @@ st.markdown("""
         border-top: 1px solid #e8e2d8;
         margin-top: 3rem;
     }
+    /* Mobile */
+    @media (max-width: 640px) {
+        .store-title { font-size: 1.4rem; }
+        .store-subtitle { font-size: 0.9rem; }
+        .store-badge { font-size: 0.72rem; padding: 0.15rem 0.5rem; }
+        .store-header { padding: 1rem 1rem; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -224,14 +231,15 @@ user_input = st.chat_input("Digite sua dúvida sobre instrumentos, pedidos ou po
 
 # ----------------- SUGESTÕES RÁPIDAS (fixas no rodapé) -----------------
 prompt_to_send = None
-bcol1, bcol2, bcol3, bcol4 = st.bottom.columns(4)
-if bcol1.button("🎸 Violões até R$1.000", use_container_width=True):
+brow1 = st.bottom.columns(2)
+brow2 = st.bottom.columns(2)
+if brow1[0].button("🎸 Violões até R$1.000", use_container_width=True):
     prompt_to_send = "Olá! Quais violões vocês têm disponíveis por até R$ 1.000?"
-if bcol2.button("📦 Rastrear Pedido #1", use_container_width=True):
+if brow1[1].button("📦 Rastrear Pedido #1", use_container_width=True):
     prompt_to_send = "Gostaria de saber o status e rastreamento do pedido 1."
-if bcol3.button("🏷️ Promoções Ativas", use_container_width=True):
+if brow2[0].button("🏷️ Promoções Ativas", use_container_width=True):
     prompt_to_send = "Quais produtos estão em promoção ativa hoje?"
-if bcol4.button("🔄 Política de Devolução", use_container_width=True):
+if brow2[1].button("🔄 Política de Devolução", use_container_width=True):
     prompt_to_send = "Como funciona a política de devolução e prazo de arrependimento da loja?"
 
 final_prompt = prompt_to_send or user_input
