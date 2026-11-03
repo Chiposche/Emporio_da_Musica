@@ -32,6 +32,7 @@ st.set_page_config(
 from agent import PROVIDERS, run_agent_turn_stream
 from core.logger import log_turn
 from core.persistence import list_sessions, load_session, new_session_id, save_message
+from core.rate_limiter import check_rate_limit, get_rate_limit_metrics
 
 # Quantas mensagens do histórico vão para a IA. Manter o recorte evita que a
 # latência cresça a cada turno (contexto inteiro era reenviado sempre) e que a
@@ -129,6 +130,19 @@ with st.sidebar:
 
     debug_mode = st.toggle("🔍 Modo Debug (Raciocínio ReAct)", value=True, help="Exibe ferramentas chamadas e dados consultados em tempo real.")
 
+    if debug_mode:
+        with st.expander("📊 Métricas de Rate Limit", expanded=False):
+            metrics = get_rate_limit_metrics()
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Requisições Total", metrics["total_requests"])
+                st.metric("Taxa de Rejeição", f"{metrics['rejection_rate']*100:.1f}%")
+            with col2:
+                st.metric(f"Último Min: {metrics['requests_last_minute']}/{metrics['limit_per_minute']}",
+                         f"{metrics['requests_last_minute']}/{metrics['limit_per_minute']}")
+                st.metric(f"Última Hora: {metrics['requests_last_hour']}/{metrics['limit_per_hour']}",
+                         f"{metrics['requests_last_hour']}/{metrics['limit_per_hour']}")
+
     st.markdown("---")
     if st.button("🔄 Reiniciar Atendimento / Nova Conversa", use_container_width=True):
         st.session_state.messages = []
@@ -222,6 +236,15 @@ if bcol4.button("🔄 Política de Devolução", use_container_width=True):
 final_prompt = prompt_to_send or user_input
 
 if final_prompt:
+    # Rate limiting check
+    if not check_rate_limit():
+        st.error(
+            "⏳ **Limite de requisições atingido!**\n\n"
+            "Aguarde um momento antes de enviar outra mensagem. "
+            "Limite: 10 mensagens por minuto, 100 por hora."
+        )
+        st.stop()
+
     # Exibe a mensagem do usuário imediatamente
     st.session_state.messages.append({"role": "user", "content": final_prompt})
     save_message(st.session_state.session_id, "user", final_prompt)
